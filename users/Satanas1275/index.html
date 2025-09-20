@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ROCKNITE OS - User Menu</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="user-menu">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="home">Home</button>
+            <button class="tab-btn" data-tab="library">Library</button>
+            <button class="tab-btn" data-tab="settings">Settings</button>
+        </div>
+
+        <div id="home" class="tab-content active">
+            <h2>Welcome, <span id="username"></span></h2>
+            <h3>Recently Played Games</h3>
+            <div id="recentGames" class="games-container"></div>
+            <button id="logout">Logout</button>
+        </div>
+
+        <div id="library" class="tab-content">
+            <h2>Library</h2>
+            <div id="libraryGames" class="games-container"></div>
+        </div>
+
+        <div id="settings" class="tab-content">
+            <label>Username:
+                <input id="newUsername" type="text">
+            </label>
+            <label>Profile Picture:
+                <select id="profilePicSelect"></select>
+            </label>
+            <label>Theme:
+                <select id="themeSelect">
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                </select>
+            </label>
+            <label>Region:
+                <select id="regionSelect">
+                    <option value="EU">Europe</option>
+                    <option value="NA">North America</option>
+                    <option value="AS">Asia</option>
+                </select>
+            </label>
+            <p>ID: <span id="userId"></span></p>
+            <button id="saveSettings">Save Changes</button>
+        </div>
+    </div>
+
+    <div id="gameModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <img id="gameModalBanner" class="game-modal-banner" src="" alt="Game Banner">
+            <div class="modal-details">
+                <h2 id="gameModalTitle"></h2>
+                <button id="playGameBtn">Play</button>
+                <div class="update-section">
+                    <span id="gameModalVersion"></span>
+                    <button id="updateGameBtn">Update</button>
+                </div>
+            </div>
+            <button id="closeGameModal" class="close-btn">Close</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

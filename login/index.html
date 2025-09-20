@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ROCKNITE OS - Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="user-selection">
+        <div class="users-container" id="usersList">
+            <div class="user-card add-user" id="addUserBtn">
+                <div class="profile-pic">+</div>
+                <span class="username">Add User</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="addUserModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Add New User</h2>
+            <input type="text" id="newUsername" placeholder="Username" maxlength="15">
+            <select id="profilePicSelect"></select>
+            <button id="submitNewUser">Create</button>
+            <button id="cancelNewUser">Cancel</button>
+        </div>
+    </div>
+
+    <script src="login.js"></script>
+</body>
+</html>
