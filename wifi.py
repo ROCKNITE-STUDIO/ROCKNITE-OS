@@ -3,12 +3,15 @@ from flask_cors import CORS
 import subprocess
 
 app = Flask(__name__)
-CORS(app)  # autorise toutes les origines
+CORS(app)
 
 @app.route('/scan-wifi')
 def scan_wifi():
     try:
-        result = subprocess.run(['nmcli', '-t', '-f', 'SSID', 'dev', 'wifi'], capture_output=True, text=True)
+        result = subprocess.run(
+            ['nmcli', '-t', '-f', 'SSID', 'dev', 'wifi'],
+            capture_output=True, text=True
+        )
         networks = [ssid for ssid in result.stdout.split('\n') if ssid]
         return jsonify({'networks': networks})
     except Exception as e:
