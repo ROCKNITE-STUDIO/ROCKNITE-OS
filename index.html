@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROCKNITE-OS Loading</title>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: #000000; /* fond noir pur */
+        color: #ffffff; /* texte blanc */
+        font-family: 'Courier New', monospace;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .loader-container {
+        text-align: center;
+    }
+
+    .logo {
+        font-size: 3em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        letter-spacing: 3px;
+        background: linear-gradient(90deg, #007bff, #ff0033);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: pulse 1.5s infinite alternate;
+        text-shadow: 0 0 10px rgba(255,255,255,0.2);
+    }
+
+    @keyframes pulse {
+        from { opacity: 0.8; transform: scale(0.97); }
+        to { opacity: 1; transform: scale(1.03); }
+    }
+
+    .progress-bar {
+        width: 400px;
+        height: 20px;
+        border-radius: 10px;
+        background: #111;
+        overflow: hidden;
+        margin: 20px auto;
+    }
+
+    .progress {
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, #ffffff, #cccccc);
+        transition: width 0.1s linear;
+    }
+
+    .messages {
+        margin-top: 15px;
+        height: 50px;
+        font-size: 0.9em;
+        position: relative;
+    }
+
+    .message {
+        opacity: 0;
+        position: absolute;
+        width: 100%;
+        text-align: center;
+        transition: opacity 0.5s ease-in-out;
+    }
+
+    .message.active {
+        opacity: 1;
+    }
+</style>
+</head>
+<body>
+
+<div class="loader-container">
+    <div class="logo">ROCKNITE-OS</div>
+    <div class="progress-bar">
+        <div class="progress" id="progress"></div>
+    </div>
+    <div class="messages">
+        <div class="message active">Initialisation du système...</div>
+        <div class="message">Chargement des drivers GPU...</div>
+        <div class="message">Activation du module Gaming...</div>
+        <div class="message">Connexion au serveur ROCKNITE...</div>
+        <div class="message">Prêt à jouer !</div>
+    </div>
+</div>
+
+<script>
+const messages = document.querySelectorAll('.message');
+let index = 0;
+
+// Animation barre de progression
+let progress = 0;
+const progressEl = document.getElementById('progress');
+function updateProgress() {
+    if (progress < 100) {
+        progress += 1;
+        progressEl.style.width = progress + '%';
+        setTimeout(updateProgress, 50);
+    }
+}
+updateProgress();
+
+function nextMessage() {
+    messages[index].classList.remove('active');
+    index++;
+    if (index < messages.length) {
+        messages[index].classList.add('active');
+    }
+}
+
+// Change message toutes les 1.2s pour laisser fade-in visible
+setInterval(() => {
+    nextMessage();
+}, 1200);
+
+// First boot detection
+const firstBootDone = localStorage.getItem('firstBootDone');
+setTimeout(() => {
+    if (!firstBootDone) {
+        window.location.href = "/first-boot";
+    } else {
+        window.location.href = "/home";
+    }
+}, 6000); // durée légèrement supérieure à la barre de progression
+</script>
+
+</body>
+</html>

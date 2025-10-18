@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROCKNITE-OS First Boot</title>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.wizard-container {
+    background: #0a0a0a;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 0 50px #007bff55;
+    width: 800px;
+    max-width: 95vw;
+}
+
+h1 {
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 25px;
+    color: #fff;
+}
+
+.wizard-body {
+    display: flex;
+    gap: 20px;
+    height: 400px;
+}
+
+.wizard-left, .wizard-right {
+    flex: 1;
+    border-radius: 15px;
+    padding: 15px;
+    background: #111;
+    overflow-y: auto;
+}
+
+.wizard-left {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1em;
+    line-height: 1.5em;
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #555;
+    background: #111;
+    color: #fff;
+    font-size: 1em;
+    margin-bottom: 10px;
+}
+
+input:focus, select:focus {
+    outline: none;
+    box-shadow: 0 0 15px #ff0033;
+}
+
+button {
+    padding: 12px 25px;
+    font-size: 1em;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    background: linear-gradient(90deg, #007bff, #ff0033);
+    color: #fff;
+    transition: 0.3s;
+}
+
+button:hover {
+    filter: brightness(1.2);
+}
+
+.btn-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+#wifi-status {
+    font-size: 0.9em;
+    color: #00ff99;
+    margin-bottom: 10px;
+}
+
+.optional {
+    font-size: 0.85em;
+    color: #888;
+    margin-bottom: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="wizard-container">
+    <h1>ROCKNITE-OS First Boot</h1>
+    <div class="wizard-body">
+        <div class="wizard-left" id="wizard-left">
+            Bienvenue dans ROCKNITE-OS !<br>Suivez les étapes pour configurer votre système.
+        </div>
+        <div class="wizard-right">
+            <!-- PAGE LANGUE -->
+            <div class="page active" id="page-language">
+                <label>Choisir la langue :</label>
+                <select id="language">
+                    <option value="fr">Français</option>
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="de">Deutsch</option>
+                    <option value="jp">日本語</option>
+                    <option value="cn">中文</option>
+                </select>
+            </div>
+
+            <!-- PAGE WIFI -->
+            <div class="page" id="page-wifi">
+                <label>Réseau Wi-Fi :</label>
+                <select id="wifi-list"></select>
+                <input type="password" id="wifi-pass" placeholder="Mot de passe">
+                <div id="wifi-status"></div>
+                <button onclick="skipWifi()">Passer Wi-Fi</button>
+            </div>
+
+            <!-- PAGE COMPTE ROCKNITE -->
+            <div class="page" id="page-account">
+                <label>Compte ROCKNITE (optionnel)</label>
+                <input type="email" id="rocknite-email" placeholder="Email">
+                <input type="password" id="rocknite-pass" placeholder="Mot de passe">
+                <div class="optional">Vous pouvez passer cette étape</div>
+            </div>
+
+            <!-- PAGE MOT DE PASSE OS -->
+            <div class="page" id="page-os-pass">
+                <label>Mot de passe pour ROCKNITE-OS (optionnel)</label>
+                <input type="password" id="os-pass" placeholder="Mot de passe OS">
+                <div class="optional">Laissez vide si vous n'en voulez pas</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="btn-container">
+        <button onclick="prevPage()">Précédent</button>
+        <button onclick="nextPage()">Suivant / Terminer</button>
+    </div>
+</div>
+
+<script>
+let currentPage = 0;
+const pages = document.querySelectorAll('.page');
+
+function showPage(index){
+    pages.forEach(p => p.classList.remove('active'));
+    pages[index].classList.add('active');
+    currentPage = index;
+    if(pages[currentPage].id==='page-wifi') loadWifi();
+}
+
+function nextPage(){
+    if(currentPage < pages.length -1){
+        showPage(currentPage+1);
+    } else {
+        finishWizard();
+    }
+}
+
+function prevPage(){
+    if(currentPage>0) showPage(currentPage-1);
+}
+
+// Wi-Fi Backend
+const BACKEND_URL = "http://127.0.0.1:5000";
+
+async function loadWifi(){
+    try{
+        const res = await fetch(`${BACKEND_URL}/scan-wifi`);
+        const data = await res.json();
+        const wifiList = document.getElementById('wifi-list');
+        wifiList.innerHTML='';
+        data.networks.forEach(ssid=>{
+            const opt = document.createElement('option');
+            opt.value = ssid;
+            opt.textContent = ssid;
+            wifiList.appendChild(opt);
+        });
+    }catch(e){
+        const wifiList = document.getElementById('wifi-list');
+        wifiList.innerHTML='';
+        const opt = document.createElement('option');
+        opt.value='';
+        opt.textContent='Impossible de détecter le Wi-Fi';
+        wifiList.appendChild(opt);
+    }
+}
+
+async function connectWifi(ssid){
+    const status = document.getElementById('wifi-status');
+    const password = document.getElementById('wifi-pass').value;
+    status.textContent='Connexion...';
+    try{
+        const res = await fetch(`${BACKEND_URL}/connect-wifi`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({ssid,password})
+        });
+        const data = await res.json();
+        if(data.status==='connected'){
+            status.textContent='Connecté !';
+            setTimeout(nextPage,500);
+        } else {
+            status.textContent='Échec : '+(data.error||'Erreur inconnue');
+        }
+    }catch(e){
+        status.textContent='Erreur : '+e;
+    }
+}
+
+function skipWifi(){
+    nextPage();
+}
+
+// Finish Wizard
+function finishWizard(){
+    const setupData = {
+        language: document.getElementById('language').value,
+        wifi: {
+            ssid: document.getElementById('wifi-list').value,
+            password: document.getElementById('wifi-pass').value
+        },
+        rockniteAccount: {
+            email: document.getElementById('rocknite-email').value,
+            password: document.getElementById('rocknite-pass').value
+        },
+        osPassword: document.getElementById('os-pass').value
+    };
+    localStorage.setItem('rockniteOS_setup', JSON.stringify(setupData));
+    localStorage.setItem('firstBootDone', 'true');
+    window.location.href='/home';
+}
+</script>
+
+</body>
+</html>
