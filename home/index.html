@@ -1,11 +1,187 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ROCKNITE-OS Home</title>
+<script src="https://unpkg.com/pocketbase@0.21.0/dist/pocketbase.umd.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_circle" />
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { 
+  background:#121212; 
+  color:#e0e0e0; 
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+  display:flex; 
+  flex-direction:column; 
+  height:100vh; 
+  overflow:hidden; 
+  transition:background 0.5s; 
+  background-size:cover; 
+  background-position:center; 
+  position:relative; 
+}
+
+nav { position:fixed; left:0; top:0; height:100vh; width:220px; background:#1f1f1f; display:flex; flex-direction:column; align-items:center; padding-top:30px; gap:15px; transform:translateX(-100%); transition:transform 0.3s ease; z-index:9999; }
+nav.active { transform:translateX(0); }
+nav h2 { color:#e0e0e0; margin-bottom:10px; }
+nav a { color:#e0e0e0; text-decoration:none; font-size:1.2em; transition:color 0.3s; }
+nav a:hover { color:#ff4500; }
+
+#user-btn { background:#1f1f1f; border:none; color:#e0e0e0; cursor:pointer; display:flex; align-items:center; gap:10px; padding:5px 10px; border-radius:8px; font-size:1em; transition:background 0.2s; margin-bottom:10px; }
+#user-btn:hover { background:#333; }
+#user-btn img { width:32px; height:32px; border-radius:50%; }
+
+main { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:20px; overflow-y:auto; width:100%; position:relative; z-index:2; }
+h1 { margin-bottom:20px; }
+
+#owned-games { display:flex; gap:20px; overflow-x:auto; padding-bottom:20px; }
+.game-item { display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1f1f1f; border-radius:12px; cursor:pointer; transition:all 0.3s ease; flex-shrink:0; width:120px; height:180px; }
+.game-item img { width:80px; height:80px; border-radius:8px; margin-bottom:10px; object-fit:cover; transition:all 0.3s ease; }
+.game-item .placeholder-icon { font-size:64px; color:#bbb; margin-bottom:10px; }
+
+footer { width:100%; background:#1f1f1f; color:#bbb; text-align:center; padding:8px; font-size:0.9em; position:fixed; bottom:0; left:0; border-top:1px solid #333; z-index:2; }
+
+/* Bannière foncée */
+#bg-overlay {
+  position:fixed;
+  top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.6);
+  z-index:1;
+  pointer-events:none;
+  transition:background 0.3s;
+}
+</style>
 </head>
 <body>
-    
+<div id="bg-overlay"></div>
+
+<nav id="sidebar">
+  <h2>ROCKNITE-OS</h2>
+  <button id="user-btn" onclick="alert('Options de compte à venir !')">
+    <span id="user-avatar-placeholder" class="material-symbols-outlined" style="font-size:32px; display:none;">account_circle</span>
+    <img id="user-avatar" src="" alt="Avatar" style="display:none;">
+    <span id="user-name">Utilisateur</span>
+  </button>
+  <a href="/home">Home</a>
+  <a href="/shop">Shop</a>
+  <a href="/settings">Settings</a>
+</nav>
+
+<main>
+  <h1>Mes jeux</h1>
+  <div id="owned-games"></div>
+</main>
+
+<footer>
+  <div id="net-status">🔄 Vérification de la connexion...</div>
+</footer>
+
+<script>
+const pb = new PocketBase("https://rocknite-studio.alwaysdata.net");
+const sidebar = document.getElementById("sidebar");
+const netStatus = document.getElementById("net-status");
+const userBtn = document.getElementById("user-btn");
+const userAvatar = document.getElementById("user-avatar");
+const userAvatarPlaceholder = document.getElementById("user-avatar-placeholder");
+const userName = document.getElementById("user-name");
+const bgOverlay = document.getElementById("bg-overlay");
+
+document.addEventListener("keydown", e => { if(e.key==="Escape") sidebar.classList.toggle("active"); });
+
+let gamepadIndex = null;
+window.addEventListener("gamepadconnected", e => { if(e.gamepad.id.toLowerCase().includes("dualshock")) gamepadIndex = e.gamepad.index; });
+window.addEventListener("gamepaddisconnected", () => gamepadIndex=null);
+function pollGamepad() {
+  if(gamepadIndex!==null){
+    const gp = navigator.getGamepads()[gamepadIndex];
+    if(gp && gp.buttons[8] && gp.buttons[8].pressed) sidebar.classList.toggle("active");
+  }
+  requestAnimationFrame(pollGamepad);
+}
+pollGamepad();
+
+async function loadGames() {
+  const authDataRaw = localStorage.getItem("pocketbase_auth");
+  let user = null;
+  try {
+    if(authDataRaw){
+      const authData = JSON.parse(authDataRaw);
+      pb.authStore.save(authData.token);
+      await pb.collection("users").authRefresh();
+      user = pb.authStore.model;
+      if(user.avatar){
+        userAvatar.src = `https://rocknite-studio.alwaysdata.net/api/files/users/${user.id}/${user.avatar}`;
+        userAvatar.style.display="inline";
+        userAvatarPlaceholder.style.display="none";
+      } else {
+        userAvatar.style.display="none";
+        userAvatarPlaceholder.style.display="inline";
+      }
+      userName.textContent = user.name;
+    }
+  } catch(err){
+    console.warn("Pas de connexion PocketBase, affichage offline", err);
+    userAvatar.style.display="none";
+    userAvatarPlaceholder.style.display="inline";
+  }
+
+  let purchases = [];
+  if(user){
+    try{
+      purchases = await pb.collection("purchases").getFullList({
+        filter:`user="${user.id}" && status="paid"`,
+        expand:"product"
+      });
+      const gamesForStorage = purchases
+        .map(p => p.expand.product)
+        .filter(p => p && p.type === "game")
+        .map(p => ({
+          id: p.id,
+          title: p.title,
+          image: p.image || null,
+          banner: `https://cdn.rocknite-studio.com/${p.id}/banner.png`
+        }));
+      localStorage.setItem("rocknite_games", JSON.stringify(gamesForStorage));
+    } catch(err){
+      console.error("Erreur récupération jeux PB", err);
+    }
+  }
+
+  let gamesToShow = [];
+  const localGamesRaw = localStorage.getItem("rocknite_games");
+  if(localGamesRaw) gamesToShow = JSON.parse(localGamesRaw);
+
+  const gameContainer = document.getElementById("owned-games");
+  gameContainer.innerHTML = "";
+
+  gamesToShow.forEach((g,i)=>{
+    const div = document.createElement("div");
+    div.className="game-item";
+    if(g.image){
+      div.innerHTML=`<img src="${g.image}" alt="${g.title}"><span>${g.title}</span>`;
+    } else {
+      div.innerHTML=`<span class="placeholder-icon material-symbols-outlined">account_circle</span><span>${g.title}</span>`;
+    }
+
+    div.addEventListener("mouseenter", ()=>{
+      div.style.width="300px"; div.style.height="150px";
+      const banner = g.banner ? g.banner : "../controller.png";
+      document.body.style.backgroundImage = `url('${banner}')`;
+    });
+    div.addEventListener("mouseleave", ()=>{
+      div.style.width="120px"; div.style.height="180px";
+      document.body.style.backgroundImage = "";
+    });
+
+    gameContainer.appendChild(div);
+  });
+
+  netStatus.innerHTML = gamesToShow.length > 0 ? "🟢 Jeux chargés !" : "⚠️ Aucun jeu trouvé";
+  netStatus.style.color = "#00ff7f";
+}
+
+window.addEventListener("load", loadGames);
+</script>
 </body>
 </html>
